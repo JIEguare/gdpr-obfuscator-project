@@ -15,3 +15,20 @@ resource "aws_s3_object" "student_file_object" {
 
   etag = filemd5("/Users/jayeguare/PORTFOLIO/gdpr-obfuscator-project/data/students_data.csv")
 }
+
+resource "aws_s3_bucket" "got_code_bucket" {
+  bucket_prefix = "obfuscator-code-bucket-"
+  force_destroy = false
+
+  tags = {
+    Name = "got code bucket"
+    Environment = "Dev"
+  }
+}
+
+resource "aws_s3_object" "got_lambda" {
+  bucket = aws_s3_bucket.got_code_bucket.id
+  key = "got_lamda_code"
+  source = "${path.module}/../src/gdpr_obfuscator_tool.zip"
+  
+}

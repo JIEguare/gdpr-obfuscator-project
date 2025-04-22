@@ -1,5 +1,5 @@
 import pandas as pd
-import re, datetime
+import re, os, json, csv
 import boto3
 
 '''If the GOT function argument passed in is a python dictionary, use module designed.
@@ -15,21 +15,22 @@ def gdpr_obfuscator_tool(file_info):
     key = object_filepath.group(2)
     file_object = object_filepath.group(3)
     file_format = object_filepath.group(4)
-    client = boto3.client('s3')
     
+    temp_input_path = f'/tmp/{file_object}'
+    temp_output_path = f'/tmp/obfuscated_{file_object}'
+    
+    client = boto3.client('s3')
     if file_format in file_extension:
-        response = client.get_object(Bucket=bucket, Key=key)
-        with open(f'{file_object}', 'wb') as file:
-            file.write(response['Body'].read())
+        client.download_file(bucket, key, temp_input_path)
         print(f'=====>>> File downloaded from {bucket} successfully....')
     
     fields_to_obfuscate = file_info['pii_fields']
     if file_format == 'csv':
-        df = pd.read_csv(file_object, index_col=0)
+        df = pd.read_csv(temp_input_path, index_col=0)
     elif file_format == 'json':
-        df = pd.read_json(file_object)
+        df = pd.read_json(temp_input_path)
     else:
-        print(f'====>>> Use format in {file_extension}!!!')
+        raise ValueError(f'====>>> Use format in {file_extension}!!!')
     
     def masking_function(row):
         for field in fields_to_obfuscate:
@@ -41,25 +42,31 @@ def gdpr_obfuscator_tool(file_info):
 
     new_df = df.apply(masking_function, axis=1)
     if file_format == 'csv':
-        new_df.to_csv(f'obfuscated_{file_object}', index=False)
+        new_df.to_csv(f'{temp_output_path}', index=False)
         print('=====>>> File obfuscated and copied successfully....')
     elif file_format == 'json':
-        new_df.to_json(f'obfuscated_{file_object}', orient='records')
+        new_df.to_json(f'{temp_output_path}', orient='records')
     else:
         print(f'====>>> Use format in {file_extension}!!!!')
     
-    with open(f'obfuscated_{file_object}', 'rb') as file_data:
+    with open(f'{temp_output_path}', 'rb') as file_data:
         upload_response = client.put_object(Body=file_data,
                                  Bucket=bucket,
-                                 Key=f'obfuscated_data/{file_object}'
+                                 Key=f'{temp_output_path}'
                                  )
     print(f'=====>>> File uploaded to {bucket} sucessfully....')
+    os.remove(temp_input_path)
+    os.remove(temp_output_path)
+    
     return upload_response['ResponseMetadata']
 
+def lambda_handler(event, context):
+    return gdpr_obfuscator_tool(event)
 
 my_data = {
-"file_to_obfuscate": "s3://personally-identifiable-info-bucket-20250422140329610600000001/new_data/student_data.csv",
+"file_to_obfuscate": "s3://personally-identifiable-info-bucket-20250422190046494400000002/new_data/student_data.csv",
 "pii_fields": ["name", "email_address"]
 }
 
-print(gdpr_obfuscator_tool(my_data))
+print(lambda_handler(my_data, {}))
+
