@@ -53,3 +53,148 @@ resource "aws_iam_role_policy_attachment" "bucket_policy_attachment" {
   role = aws_iam_role.got_lambda_role.name
   policy_arn = aws_iam_policy.bucket_policy.arn
 }
+
+# CREATING AND ATTACHING CLOUDWATCH POLICES
+data "aws_iam_policy_document" "got_cloudwatch_policy_document" {
+  statement {
+    effect = "Allow"
+    actions = ["logs:CreateLogGroup"]
+    resources = ["*"]
+  }
+  statement {
+    effect = "Allow"
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["*"]
+}
+}
+
+resource "aws_iam_policy" "got_cloudwatch_policy" {
+  name = "lambda_cloudwatch_policy"
+  policy = data.aws_iam_policy_document.got_cloudwatch_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "got_cloudwatch_policy_attachment" {
+  role = aws_iam_role.got_lambda_role.name
+  policy_arn = aws_iam_policy.got_cloudwatch_policy.arn
+}
+
+resource "aws_iam_role" "iam_for_got_sfn" {
+  name = "iam-role-for-got-sfn"
+  assume_role_policy = <<EOF
+{
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "sts:AssumeRole"
+                ],
+                "Principal": {
+                    "Service": [
+                        "states.amazonaws.com",
+                        "events.amazonaws.com",
+                        "scheduler.amazonaws.com"
+                    ]
+                }
+            }
+        ]
+    }
+EOF
+}
+
+
+resource "aws_iam_policy_attachment" "got_sfn_lambda_execution" {
+  name       = "got_sfn_lambda_execution_attachment"
+  roles      = [aws_iam_role.iam_for_got_sfn.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
+}
+resource "aws_iam_policy_attachment" "got_sfn_cloudwatch_execution" {
+  name       = "got_sfn_cloudwatch_execution_attachment"
+  roles      = [aws_iam_role.iam_for_got_sfn.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+resource "aws_iam_policy_attachment" "got_sfn_s3_execution" {
+  name       = "sfn_s3_execution_attachment"
+  roles      = [aws_iam_role.iam_for_got_sfn.name]
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+resource "aws_iam_policy_attachment" "got_sfn_sns_execution" {
+  name       = "sfn_sns_execution_attachment"
+  roles      = [aws_iam_role.iam_for_got_sfn.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+}
+
+resource "aws_iam_policy" "got_eventbridge_access_policy" {
+    name = "got-eventbridge-access-policy"
+
+    policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "states:StartExecution"
+            ],
+            "Resource": [
+                "${aws_sfn_state_machine.got_sfn_state_machine.arn}"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role" "got_eventbridge_scheduler_iam_role" {
+  name = "got-eventbridge-scheduler-role"
+  assume_role_policy  = <<EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "scheduler.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+EOF
+}
+resource "aws_iam_role_policy_attachment" "got_eventbridge_scheduler" {
+  policy_arn = aws_iam_policy.got_eventbridge_access_policy.arn
+  role       = aws_iam_role.got_eventbridge_scheduler_iam_role.name
+}
+
+resource "aws_iam_role_policy" "got_sns_publish_policy" {
+  name = "sns-publish"
+  role = aws_iam_role.got_lambda_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "sns:Publish",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "logs:StartQuery",
+          "logs:GetQueryResults",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+          "iam:ListAccountAliases",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}

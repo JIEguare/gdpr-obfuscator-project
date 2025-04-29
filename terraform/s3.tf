@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "pii_file_bucket" {
-  bucket_prefix = "personally-identifiable-info-bucket-"
+  bucket = "personally-identifiable-info-bucket"
   force_destroy = false
 
   tags = {
