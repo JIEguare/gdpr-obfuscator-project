@@ -15,6 +15,11 @@ def gdpr_obfuscator_tool(file_info):
     key = object_filepath.group(2)
     file_object = object_filepath.group(3)
     file_format = object_filepath.group(4)
+   
+    if object_filepath is None:
+        raise ValueError(f'====>>> Use format in {file_extension}!!!')
+    if object_filepath.group(4) not in file_extension:
+        raise ValueError(f'====>>> Use format in {file_extension}!!!')
     
     temp_input_path = f'/tmp/{file_object}'
     temp_output_path = f'/tmp/obfuscated_{file_object}'
@@ -62,11 +67,4 @@ def gdpr_obfuscator_tool(file_info):
 
 def lambda_handler(event, context):
     return gdpr_obfuscator_tool(event)
-
-my_data = {
-"file_to_obfuscate": "s3://personally-identifiable-info-bucket-20250422190046494400000002/new_data/student_data.csv",
-"pii_fields": ["name", "email_address"]
-}
-
-print(lambda_handler(my_data, {}))
 

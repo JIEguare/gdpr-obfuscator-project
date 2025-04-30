@@ -4,7 +4,7 @@ resource "aws_sfn_state_machine" "got_sfn_state_machine" {
 
   definition = <<EOF
 {
-  "Comment": "got state machine",
+  "Comment": "GOT state machine responsible for masking PII data by inovking Lambda function",
   "StartAt": "Got Lambda Invoke",
   "States": {
     "Got Lambda Invoke": {
