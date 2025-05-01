@@ -56,19 +56,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check Required Secrets
-        run: |
-          MISSING=""
-          for secret in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION SNS_EMAIL; do
-            if [ -z "${{ secrets[secret] }}" ]; then
-              echo "::error::Missing required secret: $secret"
-              MISSING=true
-            fi
-          done
-          if [ "$MISSING" = true ]; then
-            exit 1
-          fi
-
       - name: Configure AWS Credential
         uses: aws-actions/configure-aws-credentials@v4
         with:
