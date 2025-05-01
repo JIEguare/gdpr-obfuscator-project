@@ -1,34 +1,40 @@
-
 name: gdpr_obfuscator_tool_deployment
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Are you sure you want to deploy to main?'
+        required: true
+        type: boolean
 
 jobs:
   run-tests:
-    # if: false # this will cause the job to be skipped - delete to enable 
     name: run-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Python Setup
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-              
-    
+
       - name: Create-Dev-Environment
         run: make create-environment
+
       - name: Install Modules
         run: make dev-setup
 
       - name: safety check
         uses: pyupio/safety-action@v1
         with:
-          api-key: ${{secrets.SAFETY_API_KEY}}
+          api-key: ${{ secrets.SAFETY_API_KEY }}
+          fail-on-severity: "high"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,18 +45,29 @@ jobs:
 
       - name: run-dev-setup-checks
         run: make run-checks
-      
-
 
   deploy-terraform:
-    # if: false # this will cause the job to be skipped - delete to enable 
     name: deploy-terraform
     runs-on: ubuntu-latest
     environment: development
     needs: run-tests
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check Required Secrets
+        run: |
+          MISSING=""
+          for secret in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION SNS_EMAIL; do
+            if [ -z "${{ secrets[secret] }}" ]; then
+              echo "::error::Missing required secret: $secret"
+              MISSING=true
+            fi
+          done
+          if [ "$MISSING" = true ]; then
+            exit 1
+          fi
 
       - name: Configure AWS Credential
         uses: aws-actions/configure-aws-credentials@v4
@@ -66,17 +83,20 @@ jobs:
         working-directory: terraform
         run: terraform init
 
-      - name: Terraform plan
+      - name: Terraform Plan
         working-directory: terraform
         env:
           TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
-          TF_VAR_SNS_EMAIL: ${{secrets.SNS_EMAIL}}
+          TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
         run: terraform plan
 
+      - name: Confirm Terraform Plan Before Apply
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "::warning::Review Terraform Plan output above before proceeding!"
 
-      - name: Terraform apply
+      - name: Terraform Apply
         working-directory: terraform
         env:
           TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
-          TF_VAR_SNS_EMAIL: ${{secrets.SNS_EMAIL}}
+          TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
         run: terraform apply -auto-approve
