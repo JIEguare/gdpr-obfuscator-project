@@ -79,7 +79,9 @@ jobs:
         env:
           TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
           TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
-        run: terraform plan -var-file="functionargs.tfvars"
+          TF_VAR_file_to_obfuscate: ${{ secrets.FILE_TO_OBFUSCATE }}
+          TF_VAR_pii_fields: ${{ secrets.PII_FIELDS }}
+        run: terraform plan 
 
       - name: Confirm Terraform Plan Before Apply
         if: github.event_name == 'workflow_dispatch'
@@ -90,4 +92,6 @@ jobs:
         env:
           TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
           TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
-        run: terraform apply -auto-approve -var-file="functionargs.tfvars"
+          TF_VAR_file_to_obfuscate: ${{ secrets.FILE_TO_OBFUSCATE }}
+          TF_VAR_pii_fields: ${{ secrets.PII_FIELDS }}
+        run: terraform apply -auto-approve
