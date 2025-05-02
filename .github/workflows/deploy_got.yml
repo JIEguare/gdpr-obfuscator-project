@@ -70,10 +70,6 @@ jobs:
         working-directory: terraform
         run: terraform init
 
-      - name: Write functionargs.tfvars from GitHub Secret
-        working-directory: terraform
-        run: echo "${{ secrets.FUNCTIONARGS_TFVARS }}" > functionargs.tfvars
-
       - name: Terraform Plan
         working-directory: terraform
         env:
