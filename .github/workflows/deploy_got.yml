@@ -76,6 +76,9 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform
+        env:
+          TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
+          TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
         run: terraform plan -var-file="functionargs.tfvars"
 
       - name: Confirm Terraform Plan Before Apply
@@ -84,4 +87,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
+        env:
+          TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
+          TF_VAR_SNS_EMAIL: ${{ secrets.SNS_EMAIL }}
         run: terraform apply -auto-approve -var-file="functionargs.tfvars"
