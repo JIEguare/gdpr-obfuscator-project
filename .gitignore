@@ -19,6 +19,5 @@ venv/
 **/.terraform*
 *.tfstate*
 *.tfvars
-*.png
 
 
