@@ -1,3 +1,4 @@
+# Shows the Terraform configuration for deploying the GDPR Obfuscator Tool (GOT) as an AWS Lambda function.
 data "archive_file" "got_file" {
   type = "zip"
   output_file_mode = "0666"

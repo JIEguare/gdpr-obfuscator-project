@@ -1,3 +1,9 @@
+# IAM Role for Lambda Function
+# This role allows the Lambda function to assume the role and access AWS services.
+# The assume role policy allows the Lambda service to assume this role.
+# The s3:HeadObject in the aws_iam policy document is needed to check if the object exists in the S3 bucket.
+# The s3:PutObject is needed to upload the object to the S3 bucket.
+# The s3:GetObject is needed to download the object from the S3 bucket.
 resource "aws_iam_role" "got_lambda_role" {
   name = "got_lambda_role"
   assume_role_policy = <<EOF
@@ -55,6 +61,7 @@ resource "aws_iam_role_policy_attachment" "bucket_policy_attachment" {
 }
 
 # CREATING AND ATTACHING CLOUDWATCH POLICES
+# The policy document defines the permissions for the Lambda function to access CloudWatch.
 data "aws_iam_policy_document" "got_cloudwatch_policy_document" {
   statement {
     effect = "Allow"
@@ -78,6 +85,10 @@ resource "aws_iam_role_policy_attachment" "got_cloudwatch_policy_attachment" {
   policy_arn = aws_iam_policy.got_cloudwatch_policy.arn
 }
 
+# IAM Role for Step Functions
+# This role allows Step Functions to assume the role and access AWS services.
+# The assume role policy allows the Step Functions service to assume this role.
+# The policy document defines the permissions for Step Functions to access Lambda, CloudWatch, S3, and SNS.
 resource "aws_iam_role" "iam_for_got_sfn" {
   name = "iam-role-for-got-sfn"
   assume_role_policy = <<EOF
@@ -145,6 +156,11 @@ resource "aws_iam_policy" "got_eventbridge_access_policy" {
 EOF
 }
 
+# IAM Role for EventBridge Scheduler
+# This role allows EventBridge Scheduler to assume the role and access AWS services.
+# The assume role policy allows the EventBridge Scheduler service to assume this role.
+# The policy document defines the permissions for EventBridge Scheduler to start execution of Step Functions.
+
 resource "aws_iam_role" "got_eventbridge_scheduler_iam_role" {
   name = "got-eventbridge-scheduler-role"
   assume_role_policy  = <<EOF
@@ -166,6 +182,10 @@ resource "aws_iam_role_policy_attachment" "got_eventbridge_scheduler" {
   policy_arn = aws_iam_policy.got_eventbridge_access_policy.arn
   role       = aws_iam_role.got_eventbridge_scheduler_iam_role.name
 }
+
+# IAM Role for SNS Publish
+# This role allows the Lambda function to publish messages to SNS and access CloudWatch logs.
+# The policy document defines the permissions for the Lambda function to publish messages to SNS and access CloudWatch logs.
 
 resource "aws_iam_role_policy" "got_sns_publish_policy" {
   name = "sns-publish"

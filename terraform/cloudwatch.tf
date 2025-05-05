@@ -36,7 +36,7 @@ resource "aws_cloudwatch_log_metric_filter" "lambdaLogDataErrorCountMetricFilter
   
 }
 
-# SNS TOPIC/ EMAIL ALERT
+# SNS Topic/Email Alert
 resource "aws_sns_topic" "errorsOverThresholdLimit" {
   name = "ErrorsOverThresholdLimit"
 }
@@ -46,7 +46,8 @@ resource "aws_sns_topic_subscription" "projectEmailSubscription" {
   endpoint  = var.SNS_EMAIL
 }
 
-# Create a CloudWatch metric alarm to trigger when the error count exceeds 1, remember to set the dimensions to the Lambda function name
+# Create a CloudWatch metric alarm to trigger when the error count exceeds 1
+#remember to set the dimensions to the Lambda function name.
 resource "aws_cloudwatch_metric_alarm" "gotLambdaErrorsCountAlarm" {
   alarm_name                = "gotLambdaErrorsCountAlarm"
   comparison_operator       = "GreaterThanOrEqualToThreshold"

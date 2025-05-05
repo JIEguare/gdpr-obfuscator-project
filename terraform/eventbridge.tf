@@ -1,3 +1,7 @@
+# This file creates an EventBridge Scheduler schedule that triggers the AWS Step Function every 24 hours.
+# The schedule is set to run in the Europe/London timezone.
+# The target is set to the ARN of the state machine and the IAM role that allows EventBridge Scheduler to invoke the state machine.
+# The input to the state machine is passed as a JSON object containing the file to obfuscate and the PII fields.
 resource "aws_scheduler_schedule" "everyday" {
   name       = "everyday_schedule"
   group_name = "default"
