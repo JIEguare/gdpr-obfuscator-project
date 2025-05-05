@@ -6,18 +6,18 @@ resource "aws_sfn_state_machine" "got_sfn_state_machine" {
   # Definition block written in Amazon States Language (JSON)
   definition = <<EOF
 {
-  "Comment": "GOT state machine responsible for masking PII data by invoking Lambda function",  // Description of the workflow
-  "StartAt": "Got Lambda Invoke",                                                               // Entry point of the state machine
+  "Comment": "GOT state machine responsible for masking PII data by invoking Lambda function", 
+  "StartAt": "Got Lambda Invoke",                                                              
   "States": {
     "Got Lambda Invoke": {
-      "Type": "Task",                                                                            // Indicates this state is a task (invokes a Lambda)
-      "Resource": "arn:aws:states:::lambda:invoke",                                              // Built-in integration pattern for Lambda invocation
-      "OutputPath": "$.Payload",                                                                 // Selects only the Payload from the Lambda output
+      "Type": "Task",                                                                           
+      "Resource": "arn:aws:states:::lambda:invoke",                                            
+      "OutputPath": "$.Payload",                                                                
       "Parameters": {
-        "Payload.$": "$",                                                                        // Passes the entire input as the payload
-        "FunctionName": "${aws_lambda_function.gdpr_obfuscator_tool.arn}"                        // ARN of the Lambda function to invoke
+        "Payload.$": "$",                                                                        
+        "FunctionName": "${aws_lambda_function.gdpr_obfuscator_tool.arn}"                   
       },
-      "Retry": [                                                                                 // Retry configuration for handling common Lambda errors
+      "Retry": [                                                                                 
         {
           "ErrorEquals": [
             "Lambda.ServiceException",
@@ -25,13 +25,13 @@ resource "aws_sfn_state_machine" "got_sfn_state_machine" {
             "Lambda.SdkClientException",
             "Lambda.TooManyRequestsException"
           ],
-          "IntervalSeconds": 1,          // Initial wait time between retries
-          "MaxAttempts": 3,              // Maximum number of retry attempts
-          "BackoffRate": 2,              // Exponential backoff rate
-          "JitterStrategy": "FULL"       // Adds randomness to retry timing to reduce contention
+          "IntervalSeconds": 1,          
+          "MaxAttempts": 3,              
+          "BackoffRate": 2,             
+          "JitterStrategy": "FULL"       
         }
       ],
-      "End": true                        // Indicates the end of the state machine execution
+      "End": true                       
     }
   }
 }
