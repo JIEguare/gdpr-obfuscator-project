@@ -61,7 +61,7 @@ Below is a simple graph depicting a successful run of the Got Lambda Invoke usin
 
 Next is a collection of test information and a table illustrating test coverage checks.
 
-![test coverage](test_coverage_info.png)
+![test coverage](test_cov_info.png)
 
 
 Finally, is a graph portraying a CI/CD pipeline indicating a successful deployment of the GOT library.
